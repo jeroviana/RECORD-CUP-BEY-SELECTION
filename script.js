@@ -1,5 +1,4 @@
 // --- CONFIGURACIÓN ---
-// El link de tu Google Sheet publicado como CSV
 const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQdvrByiafuzyO8IkKTEiNa9wVqJcOvSXLQtt7pWtF1a4TCAzDzxfsCwmVBcchJZaxHqkDKEjHI9btA/pub?gid=0&single=true&output=csv";
 
 // --- ESTADO GLOBAL ---
@@ -33,103 +32,76 @@ const finalDeckDisplay = document.getElementById('final-deck-display');
 const finalPointsText = document.getElementById('final-points-text');
 const btnRestart = document.getElementById('btn-restart');
 
-// --- FUNCIÓN PARA PARSEAR EL CSV DE GOOGLE SHEETS ---
+// --- FUNCIÓN PARA PARSEAR EL CSV ---
 function parseCSV(text) {
-    // Dividimos el texto en filas
     const lines = text.split(/\r?\n/);
-    if (lines.length < 2) return [];
+    if (lines.length < 4) return [];
 
-    // La primera fila contiene los puntos (Fila 1)
-    const pointsRow = lines[0].split(',');
-    
+    // Fila 0: Valores, Fila 1: Nombre 1, Fila 2: Nombre 2, Fila 3: Link
+    const pointsRow = lines[0].split(',').map(p => p.replace(/"/g, '').trim());
+    const name1Row = lines[1].split(',').map(n => n.replace(/"/g, '').trim());
+    const name2Row = lines[2].split(',').map(n => n.replace(/"/g, '').trim());
+    const imgRow = lines[3].split(',').map(u => u.replace(/"/g, '').trim());
+
     const beys = [];
     
-    // Empezamos desde la fila 1 (índice 1), saltando de 2 en 2
-    // porque la fila actual tiene los nombres y la siguiente tiene la imagen.
-    for (let i = 1; i < lines.length; i += 2) {
-        if (!lines[i] || !lines[i + 1]) break; // Seguridad por si falta la fila de imagen
+    for (let col = 0; col < pointsRow.length; col++) {
+        const value = parseInt(pointsRow[col]) || 0;
+        const name1 = name1Row[col] || '';
+        const name2 = name2Row[col] || '';
+        const imgUrl = imgRow[col] || '';
 
-        const nameRow = lines[i].split(',');
-        const imgRow = lines[i + 1].split(',');
-
-        // Limpiamos las comillas y espacios en blanco
-        const name1 = nameRow[0] ? nameRow[0].replace(/"/g, '').trim() : '';
-        const name2 = nameRow[1] ? nameRow[1].replace(/"/g, '').trim() : '';
-        const imgUrl = imgRow[2] ? imgRow[2].replace(/"/g, '').trim() : '';
-
-        // Usamos el segundo nombre si existe, sino el primero
         const finalName = name2 || name1;
 
-        // Buscamos el valor en la primera fila.
-        // Como cada bey ocupa una columna (A para nombre1, B para nombre2, C para imagen),
-        // el valor del bey en esa columna está en la fila 0.
-        let value = 0;
-        // El índice de la columna del bey es (i-1) / 2 asumiendo que cada bey ocupa 2 filas y 1 columna.
-        // Pero para ser más precisos, usamos el índice del nombre1 (columna A, índice 0) o nombre2 (columna B, índice 1).
-        // Para simplificar, si estamos en la fila i, el valor está en pointsRow en la misma posición de columna que el nombre.
-        // Como el bey está en la columna 0 (A) para nombre1, o 1 (B) para nombre2, 
-        // y los puntos están en la misma columna, usamos el índice de la columna del nombre.
-        // Si el bey está en la columna 0 (A), el valor está en pointsRow[0].
-        // Si está en la columna 1 (B), el valor está en pointsRow[1].
-        // Pero en tu hoja, parece que cada bey ocupa su propia columna, así que el valor está en pointsRow[i-1] (porque i empieza en 1).
-        // Ajustamos para que tome el valor correcto de la columna del bey.
-        // El bey en la columna A (índice 0) tiene su valor en pointsRow[0].
-        // El bey en la columna B (índice 1) tiene su valor en pointsRow[1].
-        // Como estamos iterando de 2 en 2 filas, la columna del bey es (i-1)/2.
-        const colIndex = Math.floor((i - 1) / 2);
-        if (pointsRow[colIndex]) {
-            value = parseInt(pointsRow[colIndex].replace(/"/g, '').trim()) || 0;
-        }
-
-        // Si no encontramos valor, intentamos con el índice directo
-        if (value === 0 && pointsRow[i-1]) {
-            value = parseInt(pointsRow[i-1].replace(/"/g, '').trim()) || 0;
-        }
-
-        // Solo agregamos si tiene nombre e imagen válidos
-        if (finalName && imgUrl) {
+        if (finalName && imgUrl.startsWith('http') && value > 0) {
             beys.push({
-                id: i, // ID único
+                id: col,
                 name: finalName,
-                nameAlt: name1, // Guardamos el otro nombre por si acaso
+                nameAlt: name1,
                 value: value,
                 img: imgUrl
             });
         }
     }
-    
     return beys;
 }
 
 // --- CARGA DE DATOS DESDE GOOGLE SHEETS ---
 async function loadBeysFromSheet() {
     try {
-        // Mostramos mensaje de carga
         beyGrid.innerHTML = '<p style="color:white; text-align:center; grid-column: 1/-1; padding: 2rem;">Cargando beyblades desde el Sheet...</p>';
         
         const response = await fetch(SHEET_URL);
-        if (!response.ok) throw new Error('Error al cargar el Sheet. Verifica que esté publicado como CSV.');
+        if (!response.ok) throw new Error('Error HTTP: ' + response.status);
         
         const csvText = await response.text();
         const loadedBeys = parseCSV(csvText);
         
         if (loadedBeys.length === 0) {
-            throw new Error('No se encontraron beys válidos. Revisa la estructura del Sheet.');
+            throw new Error('No se encontraron beys válidos. Revisa el formato del Sheet.');
         }
 
-        // Ordenamos de mayor a menor valor (los de 7 puntos primero)
         allBeys = loadedBeys.sort((a, b) => b.value - a.value);
-        
-        // Renderizamos la cuadrícula
         renderGrid(allBeys);
         
     } catch (error) {
-        console.error(error);
-        beyGrid.innerHTML = `<p style="color:#ff3333; text-align:center; grid-column: 1/-1; padding: 2rem; font-weight: bold;">
-            Error al cargar los datos.<br>
-            Asegúrate de que el Sheet esté publicado como CSV y que el link sea correcto.<br>
-            <small>${error.message}</small>
-        </p>`;
+        console.error("Error detallado:", error);
+        beyGrid.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; color: #ff3333; padding: 2rem; background: rgba(255,0,0,0.1); border-radius: 10px; border: 1px solid #ff3333;">
+                <h3>⚠️ Error al cargar el Google Sheet</h3>
+                <p>Motivo: ${error.message}</p>
+                <button onclick="location.reload()" style="margin-top: 15px; padding: 10px 20px; background: #ff3333; color: white; border: none; border-radius: 5px; cursor: pointer;">Reintentar</button>
+            </div>
+        `;
+        // Datos de prueba por si falla
+        allBeys = [
+            { id: 1, name: "Wizard Rod (Prueba)", value: 7, img: "https://placehold.co/200x200/ff3333/white?text=Wizard+Rod" },
+            { id: 2, name: "Shark Scale (Prueba)", value: 7, img: "https://placehold.co/200x200/ff3333/white?text=Shark+Scale" },
+            { id: 3, name: "Aero Pegasus (Prueba)", value: 6, img: "https://placehold.co/200x200/ff9933/white?text=Aero+Pegasus" },
+            { id: 4, name: "Clock Mirage (Prueba)", value: 4, img: "https://placehold.co/200x200/33cc33/white?text=Clock+Mirage" },
+            { id: 5, name: "Buster Sword (Prueba)", value: 2, img: "https://placehold.co/200x200/9933ff/white?text=Buster+Sword" }
+        ].sort((a, b) => b.value - a.value);
+        renderGrid(allBeys);
     }
 }
 
@@ -157,20 +129,18 @@ function renderGrid(beysToRender) {
         const isSelected = selectedBeys.some(b => b.id === bey.id);
         const canAfford = bey.value <= currentPoints;
         
-        // Determinar clases
         let classes = 'bey-card';
         if (isSelected) classes += ' selected';
-        
-        // Si no lo puede pagar Y no está seleccionado Y no tiene los 3 beys, se desactiva (gris)
         if (!canAfford && !isSelected && selectedBeys.length < MAX_BEYS) classes += ' disabled';
-        
-        // Si ya tiene 3 beys, los demás no seleccionados se atenúan
         if (selectedBeys.length >= MAX_BEYS && !isSelected) classes += ' disabled';
+
+        const isValidUrl = bey.img && bey.img.startsWith('http');
+        const finalImg = isValidUrl ? bey.img : 'https://placehold.co/200x200/333/white?text=Sin+Imagen';
 
         const card = document.createElement('div');
         card.className = classes;
         card.innerHTML = `
-            <img src="${bey.img}" alt="${bey.name}" onerror="this.src='https://placehold.co/200x200/333/white?text=Img+Error'">
+            <img src="${finalImg}" alt="${bey.name}" onerror="this.src='https://placehold.co/200x200/333/white?text=Error'">
             <div class="bey-name" title="${bey.name}">${bey.name}</div>
             <div class="bey-value val-${bey.value}">+${bey.value}</div>
             ${!isSelected 
@@ -178,10 +148,9 @@ function renderGrid(beysToRender) {
                 : `<div class="card-actions" style="background:#ff3333; color:white;">Quitar</div>`}
         `;
 
-        // Lógica de click en la tarjeta
         card.addEventListener('click', (e) => {
             if (e.target.classList.contains('card-actions') || e.target.closest('.bey-card')) {
-                toggleSelection(bey, card);
+                toggleSelection(bey);
             }
         });
 
@@ -191,7 +160,10 @@ function renderGrid(beysToRender) {
 
 function filterAndRender() {
     const searchTerm = searchBar.value.toLowerCase();
-    const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+    const activeFilterEl = document.querySelector('.filter-btn.active');
+    if (!activeFilterEl) return; 
+    
+    const activeFilter = activeFilterEl.dataset.filter;
     
     const filtered = allBeys.filter(bey => {
         const matchesSearch = bey.name.toLowerCase().includes(searchTerm) || 
@@ -207,13 +179,11 @@ function toggleSelection(bey) {
     const index = selectedBeys.findIndex(b => b.id === bey.id);
     
     if (index > -1) {
-        // Ya está seleccionado -> Quitarlo
         selectedBeys.splice(index, 1);
         currentPoints += bey.value;
     } else {
-        // No está seleccionado -> Intentar agregarlo
-        if (selectedBeys.length >= MAX_BEYS) return; // Ya tiene 3
-        if (bey.value > currentPoints) return; // No le alcanza
+        if (selectedBeys.length >= MAX_BEYS) return;
+        if (bey.value > currentPoints) return;
         
         selectedBeys.push(bey);
         currentPoints -= bey.value;
@@ -223,10 +193,8 @@ function toggleSelection(bey) {
 }
 
 function updateUI() {
-    // Actualizar Puntos
     pointsDisplay.textContent = currentPoints;
     
-    // Actualizar Miniaturas Header
     headerMiniatures.innerHTML = '';
     selectedBeys.forEach(b => {
         const img = document.createElement('img');
@@ -236,7 +204,6 @@ function updateUI() {
         headerMiniatures.appendChild(img);
     });
 
-    // Actualizar Previsualización Grande (Centro)
     largePreview.innerHTML = '';
     selectedBeys.forEach((b) => {
         const container = document.createElement('div');
@@ -248,9 +215,7 @@ function updateUI() {
         img.className = 'large-bey-img';
         img.title = b.name;
         
-        // Al hacer click en la previsualización grande, preguntar si cambiar (sin ventanas)
         container.addEventListener('click', (e) => {
-            // Evitar que se creen múltiples mensajes
             if(container.querySelector('.confirm-msg')) return;
 
             const confirmDiv = document.createElement('div');
@@ -271,12 +236,10 @@ function updateUI() {
             
             confirmDiv.querySelector('span').addEventListener('click', (ev) => {
                 ev.stopPropagation();
-                toggleSelection(b); // Lo quita
+                toggleSelection(b);
             });
             
             container.appendChild(confirmDiv);
-            
-            // Auto-eliminar el mensaje después de 3 seg
             setTimeout(() => { if(confirmDiv.parentNode) confirmDiv.remove(); }, 3000);
         });
         
@@ -284,14 +247,10 @@ function updateUI() {
         largePreview.appendChild(container);
     });
 
-    // Volver a renderizar la cuadrícula para aplicar estados de gris/desactivado
     filterAndRender();
     
-    // Mostrar/Ocultar Footer y Botón de Definir
     if (selectedBeys.length === MAX_BEYS) {
         footerAction.classList.remove('hidden');
-        
-        // Si sobran puntos, mostrar advertencia
         if (currentPoints > 0) {
             warningMsg.classList.remove('hidden');
         } else {
@@ -307,7 +266,8 @@ function resetDeck() {
     currentPoints = 10;
     searchBar.value = '';
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('.filter-btn[data-filter="all"]').classList.add('active');
+    const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+    if (allBtn) allBtn.classList.add('active');
     updateUI();
 }
 
@@ -329,7 +289,7 @@ function showSuccessScreen() {
     startConfetti();
 }
 
-// --- CONFETI SIMPLE (Canvas) ---
+// --- CONFETI SIMPLE ---
 function startConfetti() {
     const canvas = document.getElementById('confetti-canvas');
     if (!canvas) return;
@@ -377,43 +337,46 @@ function startConfetti() {
         if (active) {
             requestAnimationFrame(animate);
         } else {
-            // Limpiar el canvas cuando termine
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
     }
     animate();
 }
 
-// --- INICIALIZACIÓN ---
+// --- INICIALIZACIÓN SEGURA ---
 function init() {
-    // Cargamos los datos del Sheet
-    loadBeysFromSheet();
-    
-    // Event Listeners
-    btnStart.addEventListener('click', startBuilder);
-    searchBar.addEventListener('input', filterAndRender);
-    btnReset.addEventListener('click', resetDeck);
-    btnDefineDeck.addEventListener('click', showSuccessScreen);
-    btnRestart.addEventListener('click', () => {
-        resetDeck();
-        showScreen('welcome');
-    });
-    
-    // Filtros
-    filtersContainer.addEventListener('click', (e) => {
-        if(e.target.classList.contains('filter-btn')) {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            e.target.classList.add('active');
-            filterAndRender();
+    // 1. Conectar botones primero (para que funcionen siempre)
+    try {
+        if (btnStart) btnStart.addEventListener('click', startBuilder);
+        if (searchBar) searchBar.addEventListener('input', filterAndRender);
+        if (btnReset) btnReset.addEventListener('click', resetDeck);
+        if (btnDefineDeck) btnDefineDeck.addEventListener('click', showSuccessScreen);
+        if (btnRestart) btnRestart.addEventListener('click', () => {
+            resetDeck();
+            showScreen('welcome');
+        });
+        
+        if (filtersContainer) {
+            filtersContainer.addEventListener('click', (e) => {
+                if(e.target.classList.contains('filter-btn')) {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    filterAndRender();
+                }
+            });
         }
-    });
 
-    // Permitir presionar "Enter" en el input del nombre
-    inputName.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            startBuilder();
+        if (inputName) {
+            inputName.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') startBuilder();
+            });
         }
-    });
+    } catch (e) {
+        console.error("Error al conectar los botones:", e);
+    }
+
+    // 2. Cargar datos
+    loadBeysFromSheet();
 }
 
 // Arrancar todo
