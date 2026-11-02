@@ -93,7 +93,13 @@
             <button id="btn-restart" class="btn-primary">Armar otro deck</button>
         </div>
     </div>
-
+<script>
+    console.log("¡El HTML cargó y está intentando llamar al script!");
+    window.onerror = function(msg, url, line) {
+        alert("ERROR EN JS: " + msg + "\nLínea: " + line);
+        return false;
+    };
+</script>
     <script src="script.js"></script>
 </body>
 </html>
