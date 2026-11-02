@@ -29,22 +29,25 @@ body {
     overflow-x: hidden;
 }
 
-/* Sistema de Pantallas */
+/* Sistema de Pantallas (A PRUEBA DE BALAS) */
 .screen {
-    display: none;
+    display: none !important;
     min-height: 100vh;
 }
 .screen.active {
-    display: block;
+    display: block !important;
 }
 
 /* --- PANTALLA 1: BIENVENIDA --- */
 #screen-welcome {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     background: radial-gradient(circle at center, #2a0a1a 0%, var(--bg-dark) 100%);
 }
+#screen-welcome.active {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+}
+
 .welcome-container {
     background: rgba(30, 30, 36, 0.9);
     padding: 3rem;
@@ -116,6 +119,10 @@ body {
 }
 
 /* --- PANTALLA 2: CONSTRUCTOR --- */
+#screen-builder.active {
+    display: block !important;
+}
+
 /* Header Estático */
 .sticky-header {
     position: sticky;
@@ -370,12 +377,15 @@ body {
 
 /* --- PANTALLA 3: ÉXITO --- */
 #screen-success {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     position: relative;
     background: radial-gradient(circle at center, #0a2a0a 0%, var(--bg-dark) 100%);
 }
+#screen-success.active {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+}
+
 #confetti-canvas {
     position: absolute;
     top: 0;
