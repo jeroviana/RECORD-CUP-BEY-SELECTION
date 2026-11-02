@@ -380,4 +380,36 @@ function init() {
 }
 
 // Arrancar todo
-init();
+// --- ARRANQUE FORZADO A PRUEBA DE BALAS ---
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM listo. Conectando botones primero...");
+    
+    // 1. Conectar el botón de Continuar DIRECTAMENTE (sin depender de init)
+    const btnStartDirect = document.getElementById('btn-start');
+    const inputNameDirect = document.getElementById('player-name');
+    
+    if (btnStartDirect) {
+        btnStartDirect.addEventListener('click', () => {
+            const name = inputNameDirect.value.trim();
+            if (!name) {
+                alert("Por favor, ingresa un nombre.");
+                return;
+            }
+            // Cambiar de pantalla manualmente
+            document.getElementById('screen-welcome').classList.remove('active');
+            document.getElementById('screen-builder').classList.add('active');
+            document.getElementById('display-name').textContent = name;
+            window.scrollTo(0, 0);
+        });
+        console.log("Botón Continuar conectado con éxito.");
+    } else {
+        console.error("No se encontró el botón btn-start en el HTML.");
+    }
+
+    // 2. Conectar el resto de botones
+    try {
+        init();
+    } catch (e) {
+        console.error("Error en init:", e);
+    }
+});
