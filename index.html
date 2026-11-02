@@ -100,6 +100,36 @@
         return false;
     };
 </script>
-    <script src="script.js"></script>
+    <script>
+    console.log("--- INICIANDO PRUEBA DIRECTA ---");
+    
+    // Esperar a que el HTML cargue
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("DOM Cargado.");
+        
+        const btn = document.getElementById('btn-start');
+        const input = document.getElementById('player-name');
+        
+        if (btn) {
+            console.log("Botón encontrado. Conectando...");
+            btn.onclick = function() {
+                console.log("¡Clic detectado!");
+                const nombre = input.value.trim();
+                if (!nombre) {
+                    alert("Por favor, ingresa un nombre.");
+                    return;
+                }
+                
+                // Cambiar de pantalla manualmente
+                document.getElementById('screen-welcome').classList.remove('active');
+                document.getElementById('screen-builder').classList.add('active');
+                document.getElementById('display-name').textContent = nombre;
+                console.log("Pantalla cambiada. Nombre: " + nombre);
+            };
+        } else {
+            console.error("ERROR: No se encontró el botón con id 'btn-start'");
+        }
+    });
+</script>
 </body>
 </html>
