@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record Cup - Armador de Decks</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Fuente para que se vea gamer -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- PANTALLA 1: BIENVENIDA -->
+    <div id="screen-welcome" class="screen active">
+        <div class="welcome-container">
+            <h1>⚡ RECORD CUP ⚡</h1>
+            <h2>2da Edición</h2>
+            <p>Ingresa tu nombre para comenzar a armar tu mazo.</p>
+            <input type="text" id="player-name" placeholder="Tu nombre o nickname..." autocomplete="off">
+            <button id="btn-start" class="btn-primary">Continuar</button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 2: SELECCIÓN DE DECK -->
+    <div id="screen-builder" class="screen">
+        <!-- Header Estático -->
+        <header class="sticky-header">
+            <div class="header-info">
+                <span id="display-name" class="player-tag">Jugador</span>
+                <div class="points-container">
+                    <span>Puntos: </span>
+                    <span id="points-available" class="points-number">10</span>
+                    <span class="points-max">/ 10</span>
+                </div>
+            </div>
+            <div class="selected-miniatures" id="header-miniatures">
+                <!-- Aquí van las miniaturas seleccionadas -->
+            </div>
+        </header>
+
+        <!-- Contenido Principal -->
+        <main class="main-content">
+            <div class="instructions">
+                <h2>Tienes 10 puntos para formar un mazo 3G</h2>
+                <p>Selecciona exactamente 3 beyblades. El valor de cada uno se restará de tus puntos.</p>
+            </div>
+
+            <!-- Buscador y Filtros -->
+            <div class="controls">
+                <input type="text" id="search-bar" placeholder="Buscar beyblade...">
+                <div class="filters" id="filters">
+                    <button class="filter-btn active" data-filter="all">Todos</button>
+                    <button class="filter-btn" data-filter="7">+7</button>
+                    <button class="filter-btn" data-filter="6">+6</button>
+                    <button class="filter-btn" data-filter="5">+5</button>
+                    <button class="filter-btn" data-filter="4">+4</button>
+                    <button class="filter-btn" data-filter="3">+3</button>
+                    <button class="filter-btn" data-filter="2">+2</button>
+                    <button class="filter-btn" data-filter="1">+1</button>
+                    <button class="filter-btn" data-filter="0">+0</button>
+                </div>
+            </div>
+
+            <!-- Previsualización Grande -->
+            <div id="large-preview" class="large-preview">
+                <!-- Aparecen los beys seleccionados en grande -->
+            </div>
+
+            <!-- Cuadrícula de Beys -->
+            <div class="bey-grid" id="bey-grid">
+                <!-- Las tarjetas se generan con JS -->
+            </div>
+        </main>
+
+        <!-- Footer Flotante para Definir Deck -->
+        <div id="footer-action" class="footer-action hidden">
+            <p id="warning-msg" class="warning-msg hidden">Te quedan puntos libres, ¿seguro que quieres continuar?</p>
+            <button id="btn-define-deck" class="btn-primary">Definir Deck</button>
+            <button id="btn-reset" class="btn-secondary">Reiniciar</button>
+        </div>
+    </div>
+
+    <!-- PANTALLA 3: ÉXITO -->
+    <div id="screen-success" class="screen">
+        <canvas id="confetti-canvas"></canvas>
+        <div class="success-container">
+            <h1>¡Ya estás listo para el torneo!</h1>
+            <h2 id="success-player-name">Jugador</h2>
+            <div class="final-deck-display" id="final-deck-display">
+                <!-- Imágenes finales grandes -->
+            </div>
+            <p id="final-points-text">Puntos gastados: 10 / 10</p>
+            <button id="btn-restart" class="btn-primary">Armar otro deck</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
